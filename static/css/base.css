@@ -1,0 +1,300 @@
+/* ================================================================
+   SiX PDV — base.css  |  Variáveis, reset, componentes globais
+   ================================================================ */
+
+/* ── Tokens ─────────────────────────────────────────────────── */
+:root {
+  --bg:           #f3f3f1;
+  --surface:      #ffffff;
+  --surface-2:    #f8f8f6;
+  --border:       #e8e8e4;
+  --border-2:     #d2d2cc;
+  --text:         #18181a;
+  --text-2:       #62625c;
+  --text-3:       #a8a8a0;
+  --accent:       #1a56db;
+  --accent-h:     #1644b0;
+  --accent-bg:    #eef2ff;
+  --accent-text:  #1e40af;
+  --green:        #15803d;
+  --green-bg:     #f0fdf4;
+  --green-b:      #bbf7d0;
+  --yellow:       #a16207;
+  --yellow-bg:    #fefce8;
+  --yellow-b:     #fef08a;
+  --red:          #b91c1c;
+  --red-bg:       #fef2f2;
+  --red-b:        #fecaca;
+  --orange:       #c2410c;
+  --orange-bg:    #fff7ed;
+  --orange-b:     #fed7aa;
+  --sans:         'DM Sans', system-ui, sans-serif;
+  --mono:         'DM Mono', 'Fira Mono', monospace;
+  --r-sm:         6px;
+  --r-md:         10px;
+  --r-lg:         14px;
+  --shadow-sm:    0 1px 3px rgba(0,0,0,.06);
+  --shadow-md:    0 4px 16px rgba(0,0,0,.08);
+  --t:            .14s ease;
+  --topbar-h:     52px;
+  --sidebar-w:    192px;
+}
+
+[data-theme="dark"] {
+  --bg:           #111113;
+  --surface:      #1c1c1f;
+  --surface-2:    #252528;
+  --border:       #2e2e33;
+  --border-2:     #3e3e45;
+  --text:         #ededef;
+  --text-2:       #9999a2;
+  --text-3:       #55555f;
+  --accent:       #4f7ef8;
+  --accent-h:     #3d6ef6;
+  --accent-bg:    #1a2340;
+  --accent-text:  #93c5fd;
+  --green:        #4ade80;
+  --green-bg:     #052e16;
+  --green-b:      #14532d;
+  --yellow:       #facc15;
+  --yellow-bg:    #1c1400;
+  --yellow-b:     #713f12;
+  --red:          #f87171;
+  --red-bg:       #2c0a0a;
+  --red-b:        #5c1414;
+  --orange:       #fb923c;
+  --orange-bg:    #1c0a00;
+  --orange-b:     #7c2d12;
+}
+
+/* ── Reset ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 14px; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* ── Botões ──────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 34px; padding: 0 13px;
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--surface); color: var(--text-2);
+  font: 500 12.5px/1 var(--sans);
+  cursor: pointer; white-space: nowrap;
+  transition: background var(--t), color var(--t), border-color var(--t);
+}
+.btn:hover { background: var(--surface-2); color: var(--text); }
+.btn:active { opacity: .85; }
+
+.btn-primary {
+  background: var(--accent); color: #fff;
+  border-color: var(--accent);
+}
+.btn-primary:hover { background: var(--accent-h); border-color: var(--accent-h); color: #fff; }
+
+.btn-ghost { background: transparent; border-color: transparent; }
+.btn-ghost:hover { background: var(--surface-2); border-color: transparent; }
+
+.btn-danger { background: var(--red-bg); color: var(--red); border-color: var(--red-b); }
+.btn-danger:hover { background: var(--red-b); }
+
+.btn-success { background: var(--green-bg); color: var(--green); border-color: var(--green-b); }
+.btn-success:hover { background: var(--green-b); }
+
+.btn-sm { height: 28px; padding: 0 10px; font-size: 12px; }
+.btn-lg { height: 42px; padding: 0 20px; font-size: 14px; font-weight: 600; }
+.btn-icon { width: 34px; padding: 0; justify-content: center; }
+.btn-icon.btn-sm { width: 28px; }
+.btn-block { width: 100%; justify-content: center; }
+
+/* ── Formulários ─────────────────────────────────────────────── */
+.form-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+.form-group:last-child { margin-bottom: 0; }
+
+.form-label {
+  font-size: 11.5px; font-weight: 700; color: var(--text-2);
+  letter-spacing: .02em; text-transform: uppercase;
+}
+
+.form-input, .form-select {
+  height: 38px; padding: 0 12px;
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--bg); color: var(--text);
+  font: 14px/1 var(--sans);
+  outline: none;
+  transition: border-color var(--t), box-shadow var(--t);
+}
+.form-input:focus, .form-select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+  background: var(--surface);
+}
+.form-input.error { border-color: var(--red); }
+
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* ── Modals ──────────────────────────────────────────────────── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 400;
+  background: rgba(0,0,0,.35); backdrop-filter: blur(2px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-lg); width: 100%; max-width: 480px;
+  box-shadow: var(--shadow-md);
+  display: flex; flex-direction: column; max-height: 90vh;
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.modal-title { font-size: 14px; font-weight: 700; }
+.modal-body  { padding: 18px 20px; overflow-y: auto; flex: 1; }
+.modal-foot  {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  padding: 14px 20px; border-top: 1px solid var(--border); flex-shrink: 0;
+}
+
+/* ── Toasts ─────────────────────────────────────────────────── */
+.toast-container {
+  position: fixed; bottom: 36px; right: 18px; z-index: 900;
+  display: flex; flex-direction: column; gap: 6px; pointer-events: none;
+}
+.toast {
+  background: var(--text); color: var(--bg);
+  padding: 10px 16px; border-radius: var(--r-md);
+  font-size: 13px; font-weight: 500;
+  animation: slideIn .2s ease; pointer-events: auto;
+}
+.toast.error   { background: var(--red);   color: #fff; }
+.toast.success { background: var(--green); color: #fff; }
+@keyframes slideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+/* ── Pills / Badges ─────────────────────────────────────────── */
+.pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 600; padding: 2px 9px;
+  border-radius: 99px; white-space: nowrap;
+}
+.pill-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.pill-normal  { background:var(--green-bg);  color:var(--green);  border:1px solid var(--green-b); }
+.pill-normal  .pill-dot { background:var(--green); }
+.pill-baixo   { background:var(--yellow-bg); color:var(--yellow); border:1px solid var(--yellow-b); }
+.pill-baixo   .pill-dot { background:var(--yellow); }
+.pill-critico { background:var(--red-bg);    color:var(--red);    border:1px solid var(--red-b); }
+.pill-critico .pill-dot { background:var(--red); }
+.pill-zero    { background:var(--orange-bg); color:var(--orange); border:1px solid var(--orange-b); }
+.pill-zero    .pill-dot { background:var(--orange); }
+
+/* ── Topbar ─────────────────────────────────────────────────── */
+.topbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 300;
+  height: var(--topbar-h);
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; padding: 0 16px;
+}
+.topbar-sep { flex: 1; }
+.topbar-right { display: flex; align-items: center; gap: 4px; }
+
+.logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.logo-mark {
+  width: 32px; height: 32px; background: var(--accent);
+  border-radius: 8px; display: flex; align-items: center;
+  justify-content: center; color: #fff; flex-shrink: 0;
+}
+.logo-name { font-size: 15px; font-weight: 700; letter-spacing: -.2px; }
+.logo-sub  { font-size: 9.5px; color: var(--text-3); letter-spacing: .07em; text-transform: uppercase; }
+
+/* ── Google Fonts ────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+/* ── Botão Caixa (verde destaque) ───────────────────────────── */
+.btn-caixa {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 34px; padding: 0 14px;
+  border-radius: var(--r-sm);
+  background: var(--green); color: #fff;
+  border: 1px solid var(--green);
+  font: 600 12.5px/1 var(--sans);
+  cursor: pointer; white-space: nowrap; text-decoration: none;
+  transition: background var(--t), box-shadow var(--t);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--green) 30%, transparent);
+}
+.btn-caixa:hover {
+  background: #15803d;
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--green) 40%, transparent);
+}
+[data-theme="dark"] .btn-caixa { background: #16a34a; border-color: #16a34a; }
+[data-theme="dark"] .btn-caixa:hover { background: #15803d; }
+
+/* ── Badge sb (sidebar) ─────────────────────────────────────── */
+.sb-badge {
+  font: 700 9.5px/1 var(--sans); text-transform: uppercase; letter-spacing: .06em;
+  padding: 2px 6px; border-radius: 99px;
+  background: var(--bg); color: var(--text-3); border: 1px solid var(--border);
+}
+.sb-badge.admin { background: var(--accent-bg); color: var(--accent-text); border-color: transparent; }
+
+/* ── Sidebar footer (hora + user) ───────────────────────────── */
+.sidebar-footer {
+  margin-top: auto;
+  padding: 12px 10px 14px;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 7px;
+}
+.sidebar-footer-clock {
+  font: 500 19px/1 var(--mono);
+  color: var(--text);
+  letter-spacing: .02em;
+}
+.sidebar-footer-user {
+  display: flex; align-items: center; gap: 7px;
+}
+.sidebar-footer-name {
+  font-size: 12.5px; color: var(--text-2); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── Topbar separador visual ────────────────────────────────── */
+.topbar-divider { width: 1px; height: 20px; background: var(--border); margin: 0 2px; }
+
+/* ── Pill piscante para alertas críticos ────────────────────── */
+@keyframes pulse-red {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .55; }
+}
+.pill-zero .pill-dot,
+.pill-critico .pill-dot { animation: pulse-red 1.8s ease-in-out infinite; }
+
+/* ── Tabela — hover mais suave ──────────────────────────────── */
+tr { transition: background var(--t); }
+
+/* ── Focus rings acessíveis ─────────────────────────────────── */
+.btn:focus-visible, .form-input:focus-visible, .form-select:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+/* ── Toast melhorado ────────────────────────────────────────── */
+.toast {
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
+  border-radius: var(--r-md);
+  display: flex; align-items: center; gap: 8px;
+}
+
+/* ── Modal scroll suave ─────────────────────────────────────── */
+.modal-body { scroll-behavior: smooth; }
+
+/* ── Topbar separador de ações ──────────────────────────────── */
+.topbar-right > .topbar-divider { flex-shrink: 0; }

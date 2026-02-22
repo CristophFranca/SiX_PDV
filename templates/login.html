@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — SiX PDV</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <style>
+    body { display:flex; align-items:center; justify-content:center; min-height:100vh; }
+    .login-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); padding:36px 40px; width:100%; max-width:380px; box-shadow:var(--shadow-md); }
+    .login-logo  { display:flex; align-items:center; gap:12px; margin-bottom:28px; }
+    .login-mark  { width:40px; height:40px; background:var(--accent); border-radius:10px; display:flex; align-items:center; justify-content:center; color:#fff; }
+    .login-name  { font-size:18px; font-weight:700; letter-spacing:-.2px; }
+    .login-sub   { font-size:10px; color:var(--text-3); text-transform:uppercase; letter-spacing:.07em; }
+    .login-title { font-size:14px; font-weight:600; margin-bottom:20px; color:var(--text-2); }
+    .login-error { background:var(--red-bg); color:var(--red); border:1px solid var(--red-b); border-radius:var(--r-sm); padding:10px 14px; font-size:13px; margin-bottom:14px; display:none; }
+    .login-hint  { margin-top:20px; padding:10px 14px; background:var(--bg); border-radius:var(--r-sm); font-size:11.5px; color:var(--text-3); text-align:center; }
+    .login-hint code { font-family:var(--mono); color:var(--text-2); }
+    .theme-fixed { position:fixed; top:14px; right:14px; }
+  </style>
+</head>
+<body>
+  <button class="btn btn-icon btn-ghost theme-btn theme-fixed" title="Alternar tema"></button>
+
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-mark">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+          <line x1="12" y1="22.08" x2="12" y2="12"/>
+        </svg>
+      </div>
+      <div>
+        <div class="login-name">SiX PDV</div>
+        <div class="login-sub">Sistema de PDV</div>
+      </div>
+    </div>
+
+    <div class="login-title">Acesse sua conta</div>
+    <div class="login-error" id="loginError"></div>
+
+    <div class="form-group">
+      <label class="form-label" for="fEmail">E-mail</label>
+      <input id="fEmail" class="form-input" type="email" placeholder="seu@email.com" autofocus autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="fSenha">Senha</label>
+      <input id="fSenha" class="form-input" type="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+
+    <button class="btn btn-primary btn-block btn-lg" id="loginBtn" onclick="doLogin()" style="margin-top:8px">
+      <span id="loginText">Entrar</span>
+      <span id="loginSpinner" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin .8s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+        Entrando…
+      </span>
+    </button>
+    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
+    <div class="login-hint" style="color:var(--text-3);font-size:11px;text-align:center;margin-top:16px">
+      Problemas para entrar? Contate o administrador do sistema.
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/core.js') }}"></script>
+  <script>
+    async function doLogin() {
+      const email = document.getElementById("fEmail").value.trim();
+      const senha = document.getElementById("fSenha").value;
+      const err   = document.getElementById("loginError");
+      err.style.display = "none";
+      document.getElementById("loginText").style.display    = "none";
+      document.getElementById("loginSpinner").style.display = "inline";
+      try {
+        await apiFetch("/api/auth/login", { method:"POST", body: JSON.stringify({ email, senha }) });
+        location.href = "/";
+      } catch(e) {
+        err.textContent   = e.message;
+        err.style.display = "block";
+        document.getElementById("loginText").style.display    = "inline";
+        document.getElementById("loginSpinner").style.display = "none";
+      }
+    }
+    document.addEventListener("keydown", e => { if(e.key === "Enter") doLogin(); });
+  </script>
+</body>
+</html>

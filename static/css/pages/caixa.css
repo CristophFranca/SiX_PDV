@@ -1,0 +1,194 @@
+/* ================================================================
+   SiX PDV — caixa.css  |  PDV / Caixa
+   ================================================================ */
+.pdv-layout {
+  display: grid;
+  grid-template-columns: 1fr 460px;
+  height: calc(100vh - var(--topbar-h));
+  margin-top: var(--topbar-h);
+}
+
+/* ── Coluna esquerda: produtos ───────────────────────────────── */
+.pdv-left {
+  display: flex; flex-direction: column;
+  border-right: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.pdv-search-bar {
+  padding: 12px 16px; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; gap: 8px;
+}
+
+.pdv-grid {
+  flex: 1; overflow-y: auto;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr));
+  gap: 10px; padding: 14px;
+  align-content: start;
+}
+
+.prod-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: 10px;
+  cursor: pointer; transition: border-color var(--t), box-shadow var(--t), transform var(--t);
+  display: flex; flex-direction: column; gap: 6px;
+  user-select: none;
+}
+.prod-card:hover {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 15%, transparent);
+  transform: translateY(-1px);
+}
+.prod-card:active { opacity: .85; }
+.prod-card.esgotado { opacity: .45; cursor: not-allowed; pointer-events: none; }
+
+.prod-cat  { font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-3); }
+.prod-nome { font-size: 12.5px; font-weight: 600; line-height: 1.3; }
+.prod-preco{ font-size: 16px; font-weight: 700; color: var(--green); font-family: var(--mono); }
+.prod-qty  { font-size: 11px; color: var(--text-3); }
+
+/* ── Coluna direita: carrinho / caixa ───────────────────────── */
+.pdv-right {
+  display: flex; flex-direction: column;
+  background: var(--surface); overflow: hidden;
+}
+
+/* Fechado / Abrir caixa */
+.caixa-fechado {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; padding: 32px;
+  text-align: center;
+}
+.caixa-fechado-icon { color: var(--text-3); margin-bottom: 8px; }
+.caixa-fechado h2   { font-size: 16px; font-weight: 700; }
+.caixa-fechado p    { font-size: 13px; color: var(--text-3); }
+
+/* Carrinho */
+.cart-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.cart-header-title { font-size: 13px; font-weight: 700; }
+.cart-header-count { font-size: 11.5px; color: var(--text-3); }
+
+.cart-items {
+  flex: 1; overflow-y: auto; padding: 8px 0;
+}
+.cart-empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: var(--text-3); font-size: 13px; gap: 8px;
+  padding: 32px;
+}
+
+.cart-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--t);
+}
+.cart-item:hover { background: var(--surface-2); }
+.cart-item-info { flex: 1; min-width: 0; }
+.cart-item-nome { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cart-item-preco{ font-size: 11.5px; color: var(--text-3); font-family: var(--mono); }
+
+.qty-ctrl { display: flex; align-items: center; gap: 6px; }
+.qty-btn  {
+  width: 24px; height: 24px; border: 1px solid var(--border);
+  border-radius: 6px; background: var(--bg); color: var(--text-2);
+  font-size: 15px; font-weight: 600; cursor: pointer; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--t);
+}
+.qty-btn:hover { background: var(--surface-2); }
+.qty-val  { font-size: 13px; font-weight: 700; min-width: 20px; text-align: center; font-family: var(--mono); }
+
+.cart-item-sub { font-size: 13px; font-weight: 700; font-family: var(--mono); min-width: 58px; text-align: right; }
+.cart-item-rm  {
+  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+  border: none; background: transparent; color: var(--text-3);
+  cursor: pointer; border-radius: 4px; flex-shrink: 0;
+  transition: background var(--t), color var(--t);
+}
+.cart-item-rm:hover { background: var(--red-bg); color: var(--red); }
+
+/* Totais */
+.cart-totals {
+  padding: 12px 16px; border-top: 1px solid var(--border);
+}
+.cart-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12.5px; color: var(--text-2); padding: 3px 0;
+}
+.cart-total-row.main {
+  font-size: 18px; font-weight: 700; color: var(--text);
+  padding: 8px 0 0; margin-top: 4px;
+  border-top: 1px solid var(--border);
+}
+.cart-total-row.main .lbl { font-size: 13px; font-weight: 600; }
+
+/* Desconto inline */
+.desconto-row {
+  display: flex; align-items: center; gap: 6px; padding: 4px 0;
+}
+.desconto-input {
+  width: 80px; height: 28px; padding: 0 8px;
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--bg); color: var(--text); font: 13px/1 var(--mono);
+  outline: none; transition: border-color var(--t);
+}
+.desconto-input:focus { border-color: var(--accent); }
+
+/* Pagamento */
+.pgto-section { padding: 12px 16px; border-top: 1px solid var(--border); }
+.pgto-label { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-3); margin-bottom: 8px; }
+.pgto-btns  { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pgto-btn   {
+  height: 36px; border: 1.5px solid var(--border); border-radius: var(--r-sm);
+  background: var(--bg); color: var(--text-2); font: 600 12.5px/1 var(--sans);
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: all var(--t);
+}
+.pgto-btn:hover  { border-color: var(--accent-text); color: var(--accent); background: var(--accent-bg); }
+.pgto-btn.active { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+
+/* Troco */
+.troco-row {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+}
+.troco-input {
+  flex: 1; height: 34px; padding: 0 10px;
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--bg); color: var(--text); font: 14px/1 var(--mono);
+  outline: none;
+}
+.troco-val {
+  font-size: 14px; font-weight: 700; color: var(--green);
+  font-family: var(--mono); min-width: 80px; text-align: right;
+}
+
+/* Botão finalizar */
+.pdv-footer { padding: 12px 16px; border-top: 1px solid var(--border); }
+
+/* ── Histórico de vendas ────────────────────────────────────── */
+.venda-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  font-size: 13px; cursor: pointer; transition: background var(--t);
+}
+.venda-row:hover { background: var(--surface-2); }
+.venda-id    { font-family: var(--mono); font-size: 12px; color: var(--text-3); min-width: 40px; }
+.venda-hora  { font-size: 11.5px; color: var(--text-3); }
+.venda-total { font-family: var(--mono); font-weight: 700; margin-left: auto; }
+
+/* ── Fechamento de caixa (modal) ────────────────────────────── */
+.fech-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  margin: 14px 0;
+}
+.fech-item { background: var(--bg); border-radius: var(--r-sm); padding: 12px 14px; }
+.fech-label{ font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-3); margin-bottom: 3px; }
+.fech-val  { font-size: 20px; font-weight: 300; letter-spacing: -.5px; font-family: var(--mono); }

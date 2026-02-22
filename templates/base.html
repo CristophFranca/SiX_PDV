@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SiX PDV{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- ─── TOPBAR ──────────────────────────────────────────────── -->
+<header class="topbar">
+  <a class="logo" href="/">
+    <div class="logo-mark">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+        <line x1="12" y1="22.08" x2="12" y2="12"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <span class="logo-name">SiX PDV</span>
+      <span class="logo-sub">Sistema de PDV</span>
+    </div>
+  </a>
+
+  <div class="topbar-sep"></div>
+
+  <nav style="display:flex;gap:2px">
+    <a href="/" class="btn btn-ghost" style="font-size:13px{% if active_page=='estoque' %};color:var(--accent);background:var(--accent-bg){% endif %}">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      Estoque
+    </a>
+    <a href="/dashboard" class="btn btn-ghost" style="font-size:13px{% if active_page=='dashboard' %};color:var(--accent);background:var(--accent-bg){% endif %}">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Dashboard
+    </a>
+
+  </nav>
+
+  <div class="topbar-right">
+    {% block topbar_actions %}{% endblock %}
+
+    <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
+    <button class="btn btn-icon btn-ghost theme-btn" title="Alternar tema"></button>
+
+    <button class="btn btn-ghost" onclick="doLogout()" title="Sair" style="padding:0 10px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ─── CONTEÚDO ─────────────────────────────────────────────── -->
+{% block content %}{% endblock %}
+
+<!-- ─── TOASTS ────────────────────────────────────────────────── -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="{{ url_for('static', filename='js/core.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

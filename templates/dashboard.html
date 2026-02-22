@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% set active_page = "dashboard" %}
+{% block title %}Dashboard — SiX PDV{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/pages/dashboard.css') }}">
+{% endblock %}
+
+{% block topbar_actions %}
+  {% if user.perfil == 'admin' %}
+  <button class="btn btn-ghost" onclick="openUsuariosModal()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Usuários
+  </button>
+  {% endif %}
+  <button class="btn btn-ghost" onclick="loadDashboard()">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.07-2.68"/></svg>
+    Atualizar
+  </button>
+{% endblock %}
+
+{% block content %}
+<div class="dash-body">
+
+  <!-- KPIs -->
+  <div class="kpi-strip">
+    <div class="kpi-tile">
+      <div class="kpi-tile-label">Total de SKUs</div>
+      <div class="kpi-tile-value" id="kt-total">—</div>
+    </div>
+    <div class="kpi-tile ok">
+      <div class="kpi-tile-label">Normal</div>
+      <div class="kpi-tile-value c-green" id="kt-normal">—</div>
+    </div>
+    <div class="kpi-tile warn">
+      <div class="kpi-tile-label">Estoque Baixo</div>
+      <div class="kpi-tile-value c-yellow" id="kt-baixo">—</div>
+    </div>
+    <div class="kpi-tile danger">
+      <div class="kpi-tile-label">Crítico + Zerado</div>
+      <div class="kpi-tile-value c-red" id="kt-critico">— / <span id="kt-zero">—</span></div>
+    </div>
+    <div class="kpi-tile money">
+      <div class="kpi-tile-label">Faturamento Hoje</div>
+      <div class="kpi-tile-value c-accent" id="kt-fat">—</div>
+      <div class="kpi-tile-sub"><span id="kt-vendas">—</span> venda(s)</div>
+    </div>
+    <div class="kpi-tile money">
+      <div class="kpi-tile-label">Por Forma Pgto.</div>
+      <div style="font-size:11px;color:var(--text-2);margin-top:4px;display:flex;flex-direction:column;gap:2px">
+        <span>💵 <span id="fat-dinheiro">—</span></span>
+        <span>📱 <span id="fat-pix">—</span></span>
+        <span>💳 <span id="fat-cartao">—</span></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRID DE CARDS -->
+  <div class="dash-grid">
+
+    <!-- Status (donut) -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <span class="dash-card-title">Distribuição de Status</span>
+      </div>
+      <div class="donut-card-inner">
+        <div class="donut-wrap">
+          <canvas id="statusChart"></canvas>
+          <div class="donut-center" id="donutCenter"></div>
+        </div>
+        <div class="legend" id="donutLegend"></div>
+      </div>
+    </div>
+
+    <!-- Por categoria -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <span class="dash-card-title">Por Categoria</span>
+        <span class="dash-card-sub">Itens cadastrados</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="catChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Movimentações 14d -->
+    <div class="dash-card span-2">
+      <div class="dash-card-header">
+        <span class="dash-card-title">Movimentações — últimos 14 dias</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="movChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Faturamento -->
+    <div class="dash-card span-2">
+      <div class="dash-card-header">
+        <span class="dash-card-title">Faturamento de Hoje</span>
+        <button class="btn btn-sm btn-ghost" onclick="window.location.href='/caixa'">Ver Caixa</button>
+      </div>
+      <div class="fat-grid">
+        <div class="fat-item"><div class="fat-label">💵 Dinheiro</div><div class="fat-value c-green" id="fat-dinheiro2">—</div></div>
+        <div class="fat-item"><div class="fat-label">📱 PIX</div><div class="fat-value c-accent" id="fat-pix2">—</div></div>
+        <div class="fat-item"><div class="fat-label">💳 Cartão</div><div class="fat-value c-yellow" id="fat-cartao2">—</div></div>
+      </div>
+    </div>
+
+    <!-- Críticos -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <span class="dash-card-title">Atenção Imediata</span>
+        <button class="btn btn-sm btn-ghost" onclick="imprimirAlertas()" style="gap:5px;font-size:12px">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Imprimir
+        </button>
+      </div>
+      <div id="critList" class="crit-list"></div>
+    </div>
+
+    <!-- Feed -->
+    <div class="dash-card">
+      <div class="dash-card-header">
+        <span class="dash-card-title">Movimentações Recentes</span>
+      </div>
+      <div id="feedList" class="feed-list"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: USUÁRIOS -->
+{% if user.perfil == 'admin' %}
+<div class="modal-overlay" id="usuariosModal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-head">
+      <div class="modal-title">Gerenciar Usuários</div>
+      <button class="btn btn-sm btn-icon btn-ghost" onclick="closeModal('usuariosModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <!-- Tabela de usuários -->
+      <div style="padding:0 0 4px">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr>
+            <th style="background:var(--surface-2);padding:10px 16px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:1px solid var(--border)">Nome</th>
+            <th style="background:var(--surface-2);padding:10px 16px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:1px solid var(--border)">E-mail</th>
+            <th style="background:var(--surface-2);padding:10px 16px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:1px solid var(--border)">Perfil</th>
+            <th style="background:var(--surface-2);padding:10px 16px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:1px solid var(--border)">Status</th>
+            <th style="background:var(--surface-2);padding:10px 16px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:1px solid var(--border)">Último acesso</th>
+            <th style="background:var(--surface-2);padding:10px 16px;border-bottom:1px solid var(--border)"></th>
+          </tr></thead>
+          <tbody id="usuariosTableBody">
+            <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-3);font-size:13px">Carregando usuários…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Formulário novo usuário -->
+      <div style="padding:16px 20px;border-top:2px solid var(--border);background:var(--surface-2)">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:12px">Novo Usuário</div>
+        <div class="form-row-2" style="margin-bottom:10px">
+          <div class="form-group" style="margin:0"><label class="form-label">Nome</label><input id="uNome" class="form-input" type="text" placeholder="Nome completo"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">E-mail</label><input id="uEmail" class="form-input" type="email" placeholder="email@exemplo.com"></div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group" style="margin:0"><label class="form-label">Senha</label><input id="uSenha" class="form-input" type="password" placeholder="Mínimo 6 caracteres"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Perfil</label><select id="uPerfil" class="form-select"><option value="operador">Operador</option><option value="admin">Admin</option></select></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('usuariosModal')">Fechar</button>
+      <button class="btn btn-primary" onclick="criarUsuario()">Criar Usuário</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+// Sincronizar fat-dinheiro/pix/cartao duplicados
+document.addEventListener("DOMContentLoaded", () => {
+  const obs = new MutationObserver(() => {
+    ["dinheiro","pix","cartao"].forEach(k => {
+      const v1 = document.getElementById(`fat-${k}`)?.textContent;
+      const el2 = document.getElementById(`fat-${k}2`);
+      if (el2 && v1) el2.textContent = v1;
+    });
+  });
+  ["fat-dinheiro","fat-pix","fat-cartao"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) obs.observe(el, { childList:true, subtree:true, characterData:true });
+  });
+});
+</script>
+{% endblock %}

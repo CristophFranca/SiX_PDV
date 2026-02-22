@@ -1,0 +1,392 @@
+{% extends "base.html" %}
+{% set active_page = "estoque" %}
+{% block title %}Estoque — SiX PDV{% endblock %}
+
+{% block extra_css %}{% endblock %}
+
+{% block topbar_actions %}
+  <button class="btn btn-ghost" onclick="openScannerModal()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="4" height="4"/><rect x="17" y="3" width="4" height="4"/><rect x="3" y="17" width="4" height="4"/><path d="M21 17h-4v4m4-4v4m-4-4h4M7 3v4H3M3 7h4M7 21v-4H3m4 4H3m4-4v4M21 3h-4v4m4 0h-4"/></svg>
+    Scanner
+  </button>
+  <button class="btn btn-ghost" onclick="openReqModal()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Requisição
+  </button>
+  <button class="btn btn-ghost" onclick="exportar()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Exportar
+  </button>
+  {% if user.perfil == 'admin' %}
+  <button class="btn btn-ghost" onclick="openUsuariosModal()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Usuários
+  </button>
+  <button class="btn btn-primary" onclick="openModal('produtoModal')">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    Novo Produto
+  </button>
+  {% endif %}
+  <a href="/caixa" class="btn btn-caixa">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+    Ir para o Caixa
+  </a>
+{% endblock %}
+
+{% block content %}
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="kpi-grid">
+      <div class="kpi-card"><div class="kpi-label">Total</div><div class="kpi-value c-accent" id="kpi-total">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Normal</div><div class="kpi-value c-green" id="kpi-normal">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Baixo</div><div class="kpi-value c-yellow" id="kpi-baixo">—</div></div>
+      <div class="kpi-card"><div class="kpi-label">Crítico</div><div class="kpi-value c-red" id="kpi-crit">—</div></div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Status</div>
+      <div class="nav-item active" data-qf="all" onclick="quickFilter('all',this)">
+        <span class="nav-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg></span>
+        Todos <span class="nav-count" id="b-all">—</span>
+      </div>
+      <div class="nav-item" data-qf="normal" onclick="quickFilter('normal',this)">
+        <span class="nav-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="var(--green)"><circle cx="5" cy="5" r="5"/></svg></span>
+        Normal <span class="nav-count" id="b-normal">—</span>
+      </div>
+      <div class="nav-item" data-qf="baixo" onclick="quickFilter('baixo',this)">
+        <span class="nav-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="var(--yellow)"><circle cx="5" cy="5" r="5"/></svg></span>
+        Estoque baixo <span class="nav-count warn" id="b-baixo">—</span>
+      </div>
+      <div class="nav-item" data-qf="critico" onclick="quickFilter('critico',this)">
+        <span class="nav-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="var(--red)"><circle cx="5" cy="5" r="5"/></svg></span>
+        Crítico <span class="nav-count danger" id="b-crit">—</span>
+      </div>
+      <div class="nav-item" data-qf="zero" onclick="quickFilter('zero',this)">
+        <span class="nav-icon"><svg width="10" height="10" viewBox="0 0 10 10" fill="var(--orange)"><circle cx="5" cy="5" r="5"/></svg></span>
+        Zerado <span class="nav-count danger" id="b-zero">—</span>
+      </div>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Categorias</div>
+      <div class="nav-item active" data-cat-nav="all" onclick="setCat('all',this)">
+        <span class="nav-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></span>
+        Todas
+      </div>
+      <div class="nav-item" data-cat-nav="Bebidas" onclick="setCat('Bebidas',this)">
+        <span class="nav-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 2h8l1 6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4L6 2z"/><path d="M9 12v6"/><path d="M15 12v6"/><path d="M5 18h14"/></svg></span>
+        Bebidas
+      </div>
+      <div class="nav-item" data-cat-nav="Alimentos" onclick="setCat('Alimentos',this)">
+        <span class="nav-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></span>
+        Alimentos
+      </div>
+      <div class="nav-item" data-cat-nav="Cigarros" onclick="setCat('Cigarros',this)">
+        <span class="nav-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="2" y1="15" x2="22" y2="15"/><line x1="2" y1="19" x2="22" y2="19"/><line x1="18" y1="11" x2="18" y2="15"/><path d="M15 11a3 3 0 0 0-3-3 3 3 0 0 0-3 3"/></svg></span>
+        Cigarros
+      </div>
+    </div>
+
+    <!-- Rodapé da sidebar: hora + usuário -->
+    <div class="sidebar-footer">
+      <div class="sidebar-footer-clock" id="sb-clock"></div>
+      <div class="sidebar-footer-user">
+        <span class="sb-badge {% if user.perfil == 'admin' %}admin{% endif %}">{{ user.perfil | capitalize }}</span>
+        <span class="sidebar-footer-name">{{ user.nome }}</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <div class="toolbar">
+      <div class="search-wrap">
+        <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="searchInput" class="search-input" type="text" placeholder="Buscar por produto, código ou EAN…">
+      </div>
+      <select id="catSel" class="select">
+        <option value="">Todas as categorias</option>
+        <option>Bebidas</option>
+        <option>Alimentos</option>
+        <option>Cigarros</option>
+      </select>
+      <select id="unSel" class="select">
+        <option value="">Todas as unidades</option>
+        <option>UN</option>
+        <option>KG</option>
+      </select>
+      <button class="btn btn-ghost" onclick="clearFilters()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        Limpar
+      </button>
+    </div>
+
+    <div class="result-bar">
+      <strong id="r-count">—</strong> produtos &nbsp;·&nbsp; Qtd. total: <strong id="r-qty">—</strong>
+      <span style="margin-left:auto;font-size:11.5px">Atualizado às <span id="r-time">—</span></span>
+    </div>
+
+    <div class="table-wrap">
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th data-sort="codigo"      onclick="sortBy('codigo')">Código <span class="sort-i">↕</span></th>
+              <th>EAN</th>
+              <th data-sort="descricao"   onclick="sortBy('descricao')" class="active-sort">Descrição <span class="sort-i">↑</span></th>
+              <th data-sort="categoria"   onclick="sortBy('categoria')">Categoria <span class="sort-i">↕</span></th>
+              <th>Status</th>
+              <th data-sort="quantidade"  onclick="sortBy('quantidade')" style="text-align:right">Quantidade <span class="sort-i">↕</span></th>
+              <th style="text-align:right">Mín / Máx</th>
+              <th data-sort="preco_venda" onclick="sortBy('preco_venda')" style="text-align:right">Preço Venda <span class="sort-i">↕</span></th>
+              <th data-sort="_pct"        onclick="sortBy('_pct')">Nível <span class="sort-i">↕</span></th>
+              <th style="text-align:right;width:110px">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="10" style="text-align:center;padding:48px;color:var(--text-3)">Carregando…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer class="page-footer">
+      <span id="f-count">—</span>
+      <div class="pagination" id="pagination"></div>
+    </footer>
+  </main>
+</div>
+
+<!-- OVERLAY + DRAWER -->
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <div>
+      <div class="drawer-eyebrow" id="d-eyebrow">—</div>
+      <div class="drawer-title"   id="d-title">—</div>
+    </div>
+    <button class="btn btn-sm btn-icon btn-ghost" onclick="closeDrawer()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="d-body"></div>
+  {% if user.perfil == 'admin' %}
+  <div class="drawer-actions">
+    <button class="btn" style="flex:1;justify-content:center" onclick="openModal('produtoModal');fillModal(state.openId)">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+      Editar Produto
+    </button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- MODAL: PRODUTO -->
+<div class="modal-overlay" id="produtoModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle">Novo Produto</div>
+      <button class="btn btn-sm btn-icon btn-ghost" onclick="closeModal('produtoModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="produtoId">
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">Código *</label><input id="fCodigo" class="form-input" type="text" placeholder="Ex: BEB001"></div>
+        <div class="form-group"><label class="form-label">EAN / Cód. Barras</label><input id="fEan" class="form-input" type="text" placeholder="Ex: 7891000315507"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Descrição *</label><input id="fDescricao" class="form-input" type="text" placeholder="Nome completo do produto"></div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">Categoria *</label>
+          <select id="fCategoria" class="form-select">
+            <option value="">Selecionar…</option>
+            <option>Bebidas</option><option>Alimentos</option><option>Cigarros</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Unidade *</label>
+          <select id="fUnidade" class="form-select">
+            <option value="UN">UN — Unidade</option>
+            <option value="KG">KG — Quilograma</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">Preço de Custo (R$)</label><input id="fPrecoCusto" class="form-input" type="number" min="0" step="0.01" value="0"></div>
+        <div class="form-group"><label class="form-label">Preço de Venda (R$)</label><input id="fPrecoVenda" class="form-input" type="number" min="0" step="0.01" value="0"></div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group"><label class="form-label">Quantidade</label><input id="fQuantidade" class="form-input" type="number" min="0" value="0"></div>
+        <div class="form-group"><label class="form-label">Mínimo</label><input id="fMinimo" class="form-input" type="number" min="0" value="0"></div>
+        <div class="form-group"><label class="form-label">Máximo</label><input id="fMaximo" class="form-input" type="number" min="0" value="0"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      {% if user.perfil == 'admin' %}
+      <button class="btn btn-danger" onclick="deletarProduto()" id="btnDeletar" style="margin-right:auto">Remover</button>
+      {% endif %}
+      <button class="btn btn-ghost" onclick="closeModal('produtoModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarProduto()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MOVIMENTAÇÃO -->
+<div class="modal-overlay" id="movModal">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-head">
+      <div class="modal-title" id="movTipoLabel">Movimentação</div>
+      <button class="btn btn-sm btn-icon btn-ghost" onclick="closeModal('movModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="movProdutoId">
+      <input type="hidden" id="movTipo">
+      <div class="form-group"><label class="form-label">Quantidade *</label><input id="movQty" class="form-input" type="number" min="0" placeholder="0"></div>
+      <div class="form-group"><label class="form-label">Observação</label><input id="movObs" class="form-input" type="text" placeholder="Opcional…"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('movModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarMovimentacao()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: REQUISIÇÃO -->
+<div class="modal-overlay" id="reqModal">
+  <div class="modal" style="max-width:540px">
+    <div class="modal-head">
+      <div class="modal-title">Requisição de Materiais</div>
+      <button class="btn btn-sm btn-icon btn-ghost" onclick="closeModal('reqModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row-2" style="margin-bottom:14px">
+        <div class="form-group" style="margin:0"><label class="form-label">Solicitante</label><input id="reqSolicitante" class="form-input" type="text" placeholder="Nome do funcionário"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Setor</label><input id="reqSetor" class="form-input" type="text" placeholder="Setor ou departamento"></div>
+      </div>
+      <div class="form-label" style="margin-bottom:8px">Itens</div>
+      <div id="reqItemList"></div>
+      <div class="form-group" style="margin-top:12px;margin-bottom:0">
+        <label class="form-label">Observações</label>
+        <input id="reqObs" class="form-input" type="text" placeholder="Opcional">
+      </div>
+    </div>
+    <div class="modal-foot" style="justify-content:space-between">
+      <button class="btn btn-ghost" onclick="clearReq()">Limpar</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="closeModal('reqModal')">Fechar</button>
+        <button class="btn btn-primary" onclick="imprimirRequisicao()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Imprimir
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SCANNER -->
+<div class="modal-overlay" id="scannerModal">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-head">
+      <div class="modal-title">Scanner de Código de Barras</div>
+      <button class="btn btn-sm btn-icon btn-ghost" onclick="closeScanner()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="scanPreview" style="display:none;margin-bottom:14px">
+        <div style="position:relative;border-radius:var(--r-md);overflow:hidden;background:#000;aspect-ratio:4/3">
+          <video id="scanVideo" autoplay playsinline style="width:100%;display:block"></video>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+            <div style="width:200px;height:80px;border:2px solid rgba(255,255,255,.6);border-radius:6px;box-shadow:0 0 0 9999px rgba(0,0,0,.35)"></div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">EAN / Código</label>
+        <div style="display:flex;gap:8px">
+          <input id="scanInput" class="form-input" type="text" placeholder="Digite ou escaneie…" autocomplete="off" style="font-family:var(--mono)">
+          <button class="btn btn-primary" onclick="buscarPorEan()">Buscar</button>
+        </div>
+      </div>
+      <div id="scanResult" style="display:none;margin-top:14px;padding:12px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md)">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:6px">Produto encontrado</div>
+        <div id="scanResultName" style="font-size:14px;font-weight:600"></div>
+        <div id="scanResultInfo" style="font-size:12.5px;color:var(--text-2);margin-top:3px"></div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="btn btn-sm" style="flex:1;justify-content:center" id="scanBtnDetalhes">Ver Detalhes</button>
+          <button class="btn btn-sm" style="flex:1;justify-content:center" id="scanBtnEntrada">↑ Entrada</button>
+          <button class="btn btn-sm" style="flex:1;justify-content:center" id="scanBtnSaida">↓ Saída</button>
+        </div>
+      </div>
+      <div id="scanNotFound" style="display:none;margin-top:14px;padding:12px 14px;background:var(--red-bg);border:1px solid var(--red-b);border-radius:var(--r-md);font-size:13px;color:var(--red)">
+        Produto não encontrado para este código.
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" id="btnCamera" onclick="toggleCamera()">Usar câmera</button>
+      <button class="btn btn-ghost" onclick="closeScanner()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: USUÁRIOS -->
+{% if user.perfil == 'admin' %}
+<div class="modal-overlay" id="usuariosModal">
+  <div class="modal" style="max-width:700px">
+    <div class="modal-head">
+      <div class="modal-title">Gerenciar Usuários</div>
+      <button class="btn btn-sm btn-icon btn-ghost" onclick="closeModal('usuariosModal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" style="padding:0">
+      <!-- Tabela de usuários -->
+      <div style="padding:0 0 4px">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr>
+            <th style="background:var(--surface-2);padding:10px 16px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:1px solid var(--border)">Nome</th>
+            <th style="background:var(--surface-2);padding:10px 16px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:1px solid var(--border)">E-mail</th>
+            <th style="background:var(--surface-2);padding:10px 16px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:1px solid var(--border)">Perfil</th>
+            <th style="background:var(--surface-2);padding:10px 16px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:1px solid var(--border)">Status</th>
+            <th style="background:var(--surface-2);padding:10px 16px;text-align:left;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3);border-bottom:1px solid var(--border)">Último acesso</th>
+            <th style="background:var(--surface-2);padding:10px 16px;border-bottom:1px solid var(--border)"></th>
+          </tr></thead>
+          <tbody id="usuariosTableBody">
+            <tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text-3);font-size:13px">Carregando usuários…</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- Formulário novo usuário -->
+      <div style="padding:16px 20px;border-top:2px solid var(--border);background:var(--surface-2)">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-3);margin-bottom:12px">Novo Usuário</div>
+        <div class="form-row-2" style="margin-bottom:10px">
+          <div class="form-group" style="margin:0"><label class="form-label">Nome</label><input id="uNome" class="form-input" type="text" placeholder="Nome completo"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">E-mail</label><input id="uEmail" class="form-input" type="email" placeholder="email@exemplo.com"></div>
+        </div>
+        <div class="form-row-2">
+          <div class="form-group" style="margin:0"><label class="form-label">Senha</label><input id="uSenha" class="form-input" type="password" placeholder="Mínimo 6 caracteres"></div>
+          <div class="form-group" style="margin:0"><label class="form-label">Perfil</label><select id="uPerfil" class="form-select"><option value="operador">Operador</option><option value="admin">Admin</option></select></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('usuariosModal')">Fechar</button>
+      <button class="btn btn-primary" onclick="criarUsuario()">Criar Usuário</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/estoque.js') }}"></script>
+{% endblock %}
