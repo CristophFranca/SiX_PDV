@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SiX PDV — Sistema de Ponto de Venda</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Tokens ──────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0a0a0b;
+  --bg2:      #0f0f10;
+  --bg3:      #141416;
+  --surface:  #1a1a1d;
+  --border:   #252528;
+  --border2:  #2e2e33;
+  --text:     #f0f0f2;
+  --text2:    #a0a0a8;
+  --text3:    #606068;
+  --green:    #22c55e;
+  --green2:   #16a34a;
+  --green-bg: rgba(34,197,94,.08);
+  --accent:   #60a5fa;
+  --yellow:   #fbbf24;
+  --red:      #f87171;
+
+  --sans:  'DM Sans', sans-serif;
+  --head:  'Syne', sans-serif;
+  --mono:  'JetBrains Mono', monospace;
+
+  --r: 8px;
+  --r2: 12px;
+  --glow: 0 0 40px rgba(34,197,94,.15);
+}
+
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ── Noise texture overlay ───────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: .025;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* ── Grid lines decorative ───────────────────────────────────── */
+.grid-bg {
+  position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 0%, black 30%, transparent 100%);
+  opacity: .4;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 48px; height: 60px;
+  background: rgba(10,10,11,.8);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+.logo-wrap {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--head); font-weight: 700; font-size: 17px;
+  text-decoration: none; color: var(--text);
+}
+.logo-box {
+  width: 32px; height: 32px;
+  background: var(--green); border-radius: 7px;
+  display: grid; place-items: center;
+  box-shadow: 0 0 16px rgba(34,197,94,.4);
+}
+.logo-box svg { display: block; }
+.logo-sub { font-family: var(--mono); font-size: 10px; font-weight: 400; color: var(--text3); letter-spacing: .06em; }
+
+nav { display: flex; align-items: center; gap: 4px; }
+nav a {
+  padding: 6px 14px; border-radius: var(--r);
+  font-size: 13.5px; color: var(--text2);
+  text-decoration: none;
+  transition: color .2s, background .2s;
+}
+nav a:hover { color: var(--text); background: var(--surface); }
+
+.btn-gh {
+  display: flex; align-items: center; gap: 7px;
+  padding: 7px 16px; border-radius: var(--r);
+  background: var(--surface); border: 1px solid var(--border2);
+  color: var(--text); font: 13px/1 var(--sans);
+  text-decoration: none;
+  transition: border-color .2s, background .2s;
+  cursor: pointer;
+}
+.btn-gh:hover { background: var(--bg3); border-color: var(--text3); }
+
+/* ── Hero ────────────────────────────────────────────────────── */
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 120px 24px 80px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.hero-glow {
+  position: absolute; top: -40%; left: 50%; transform: translateX(-50%);
+  width: 800px; height: 600px;
+  background: radial-gradient(ellipse, rgba(34,197,94,.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 5px 14px; margin-bottom: 32px;
+  border-radius: 100px;
+  border: 1px solid rgba(34,197,94,.3);
+  background: rgba(34,197,94,.06);
+  font: 12px/1 var(--mono); color: var(--green);
+  letter-spacing: .04em;
+  animation: fadeUp .6s ease both;
+}
+.badge-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+h1 {
+  font-family: var(--head);
+  font-size: clamp(48px, 8vw, 88px);
+  font-weight: 800; line-height: 1.0;
+  letter-spacing: -.03em;
+  animation: fadeUp .7s .1s ease both;
+}
+h1 em { font-style: normal; color: var(--green); }
+
+.hero-desc {
+  margin-top: 24px; max-width: 520px;
+  font-size: 17px; line-height: 1.7;
+  color: var(--text2);
+  animation: fadeUp .7s .2s ease both;
+}
+
+.hero-actions {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 40px;
+  animation: fadeUp .7s .3s ease both;
+}
+
+.btn-primary {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 24px; border-radius: var(--r);
+  background: var(--green); color: #000;
+  font: 600 14px/1 var(--sans);
+  text-decoration: none;
+  transition: background .2s, transform .15s, box-shadow .2s;
+  box-shadow: 0 4px 20px rgba(34,197,94,.3);
+}
+.btn-primary:hover { background: #4ade80; transform: translateY(-1px); box-shadow: 0 8px 28px rgba(34,197,94,.4); }
+
+.btn-secondary {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 24px; border-radius: var(--r);
+  background: transparent; color: var(--text);
+  border: 1px solid var(--border2);
+  font: 500 14px/1 var(--sans);
+  text-decoration: none;
+  transition: background .2s, border-color .2s;
+}
+.btn-secondary:hover { background: var(--surface); border-color: var(--text3); }
+
+.hero-stats {
+  display: flex; align-items: center; gap: 40px;
+  margin-top: 64px;
+  font-family: var(--mono);
+  animation: fadeUp .7s .4s ease both;
+}
+.stat-item { text-align: center; }
+.stat-num { font-size: 28px; font-weight: 500; color: var(--text); }
+.stat-num span { color: var(--green); }
+.stat-label { font-size: 11px; color: var(--text3); letter-spacing: .08em; text-transform: uppercase; margin-top: 4px; }
+.stat-div { width: 1px; height: 36px; background: var(--border2); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Preview Window ──────────────────────────────────────────── */
+.preview-wrap {
+  width: 100%; max-width: 1100px; margin: 0 auto;
+  padding: 80px 24px;
+  animation: fadeUp .8s .5s ease both;
+}
+
+.window {
+  border-radius: 12px;
+  border: 1px solid var(--border2);
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.04),
+    0 40px 80px rgba(0,0,0,.6),
+    var(--glow);
+}
+
+.window-bar {
+  background: var(--bg3);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.dots { display: flex; gap: 6px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; }
+.dot.r { background: #ff5f57; }
+.dot.y { background: #febc2e; }
+.dot.g { background: #28c840; }
+.window-url {
+  flex: 1; text-align: center;
+  font: 12px/1 var(--mono); color: var(--text3);
+  background: var(--surface);
+  padding: 5px 14px; border-radius: 6px;
+  border: 1px solid var(--border);
+  max-width: 280px; margin: 0 auto;
+}
+
+/* Tabs para trocar a tela */
+.preview-tabs {
+  display: flex; justify-content: center; gap: 8px;
+  margin-bottom: 20px;
+}
+.ptab {
+  padding: 6px 18px; border-radius: 100px;
+  font: 12px/1 var(--mono); color: var(--text3);
+  border: 1px solid var(--border);
+  background: transparent; cursor: pointer;
+  transition: all .2s;
+}
+.ptab.active, .ptab:hover {
+  color: var(--green); border-color: rgba(34,197,94,.4);
+  background: var(--green-bg);
+}
+
+/* ── Telas simuladas ─────────────────────────────────────────── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* Topbar do sistema */
+.sys-topbar {
+  background: #0e0e10;
+  border-bottom: 1px solid #1e1e22;
+  padding: 0 16px; height: 48px;
+  display: flex; align-items: center; gap: 8px;
+}
+.sys-logo {
+  display: flex; align-items: center; gap: 7px;
+  font: 600 13px/1 var(--head); color: var(--text);
+  margin-right: 16px;
+}
+.sys-logo-box {
+  width: 22px; height: 22px; background: var(--green); border-radius: 5px;
+  display: grid; place-items: center;
+}
+.sys-logo-sub { font: 400 9px/1 var(--mono); color: var(--text3); }
+.nav-pill {
+  padding: 4px 12px; border-radius: 6px;
+  font: 500 12px/1 var(--sans); color: var(--text3);
+  text-decoration: none; cursor: default;
+}
+.nav-pill.active { background: rgba(96,165,250,.12); color: var(--accent); }
+.spacer { flex: 1; }
+.btn-green-sm {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 6px;
+  background: var(--green); color: #000;
+  font: 600 11.5px/1 var(--sans);
+}
+
+/* ── Tela Estoque ─────────────────────────────────────────────── */
+.estoque-body { background: #0a0a0b; padding: 0; }
+.est-toolbar {
+  background: #0f0f10;
+  border-bottom: 1px solid #1e1e22;
+  padding: 10px 16px;
+  display: flex; align-items: center; gap: 8px;
+}
+.search-box {
+  display: flex; align-items: center; gap: 6px;
+  background: #141416; border: 1px solid #252528;
+  border-radius: 6px; padding: 0 10px;
+  flex: 1; max-width: 280px; height: 30px;
+  font: 12px/1 var(--mono); color: var(--text3);
+}
+.filter-pill {
+  padding: 4px 10px; border-radius: 5px;
+  background: #141416; border: 1px solid #252528;
+  font: 11px/1 var(--mono); color: var(--text3);
+}
+.result-row {
+  padding: 6px 16px; font: 11.5px/1 var(--mono);
+  color: var(--text3); border-bottom: 1px solid #1e1e22;
+  display: flex; justify-content: space-between;
+}
+.result-row strong { color: var(--text); }
+
+table.est-table { width: 100%; border-collapse: collapse; }
+table.est-table th {
+  background: #111113; padding: 7px 14px;
+  font: 700 9.5px/1 var(--sans); text-transform: uppercase;
+  letter-spacing: .08em; color: #505058;
+  border-bottom: 1px solid #1e1e22; text-align: left;
+  white-space: nowrap;
+}
+table.est-table th:first-child { color: var(--accent); }
+table.est-table td {
+  padding: 9px 14px; font-size: 12.5px;
+  border-bottom: 1px solid #161618; color: var(--text);
+  white-space: nowrap;
+}
+table.est-table tr:last-child td { border: none; }
+table.est-table tr:hover td { background: rgba(255,255,255,.02); }
+.cod { font: 11px/1 var(--mono); color: var(--text3); }
+.ean { font: 10.5px/1 var(--mono); color: #404048; }
+.pill {
+  display: inline-block; padding: 2px 8px; border-radius: 100px;
+  font: 600 10px/1.6 var(--mono); letter-spacing: .04em;
+}
+.pill.normal  { background: rgba(34,197,94,.12); color: var(--green); }
+.pill.baixo   { background: rgba(251,191,36,.12); color: var(--yellow); }
+.pill.critico { background: rgba(248,113,113,.12); color: var(--red); }
+.level-bar { display: flex; align-items: center; gap: 6px; }
+.bar-track { width: 64px; height: 4px; background: #1e1e22; border-radius: 2px; }
+.bar-fill  { height: 4px; border-radius: 2px; background: var(--green); }
+.bar-fill.y { background: var(--yellow); }
+.bar-fill.r { background: var(--red); }
+.bar-pct { font: 10px/1 var(--mono); color: var(--text3); }
+.price-col { font-family: var(--mono); font-size: 12px; color: var(--green); }
+.actions-col { display: flex; gap: 4px; justify-content: flex-end; }
+.ic-btn {
+  width: 24px; height: 24px; border-radius: 5px;
+  background: #141416; border: 1px solid #252528;
+  display: grid; place-items: center; cursor: default;
+}
+
+/* ── Tela Dashboard ───────────────────────────────────────────── */
+.dash-body { background: #0a0a0b; padding: 16px; display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+.kpi {
+  background: #0f0f10; border: 1px solid #1e1e22;
+  border-radius: 8px; padding: 14px 16px;
+}
+.kpi-label { font: 10px/1 var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: .08em; }
+.kpi-val { font: 700 22px/1.2 var(--head); color: var(--text); margin-top: 6px; }
+.kpi-val.green { color: var(--green); }
+.kpi-sub { font: 11px/1 var(--mono); color: var(--text3); margin-top: 4px; }
+.dash-chart {
+  grid-column: span 2;
+  background: #0f0f10; border: 1px solid #1e1e22;
+  border-radius: 8px; padding: 14px 16px;
+}
+.chart-title { font: 600 11px/1 var(--sans); color: var(--text2); margin-bottom: 12px; text-transform: uppercase; letter-spacing: .06em; }
+.mini-bars { display: flex; align-items: flex-end; gap: 3px; height: 60px; }
+.mini-bar { flex: 1; border-radius: 2px 2px 0 0; background: var(--green); opacity: .7; transition: opacity .2s; }
+.mini-bar:hover { opacity: 1; }
+.dash-list {
+  grid-column: span 2;
+  background: #0f0f10; border: 1px solid #1e1e22;
+  border-radius: 8px; padding: 14px 16px;
+}
+.list-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 0; border-bottom: 1px solid #161618;
+  font-size: 12px;
+}
+.list-row:last-child { border: none; }
+.list-dot { width: 6px; height: 6px; border-radius: 50%; margin-right: 8px; flex-shrink: 0; }
+
+/* ── Tela Caixa / PDV ─────────────────────────────────────────── */
+.caixa-body { background: #0a0a0b; display: grid; grid-template-columns: 1fr 340px; height: 380px; }
+.prod-grid { padding: 12px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; align-content: start; overflow: hidden; }
+.prod-card {
+  background: #0f0f10; border: 1px solid #1e1e22;
+  border-radius: 8px; padding: 10px;
+  cursor: default; transition: border-color .2s;
+}
+.prod-card:hover { border-color: rgba(34,197,94,.3); }
+.prod-card.esg { opacity: .4; }
+.prod-nome { font: 600 11.5px/1.3 var(--sans); color: var(--text); margin-bottom: 4px; }
+.prod-cat { font: 10px/1 var(--mono); color: var(--text3); margin-bottom: 6px; }
+.prod-preco-card { font: 700 14px/1 var(--mono); color: var(--green); }
+.prod-stock { font: 10px/1 var(--mono); color: var(--text3); margin-top: 3px; }
+
+.cart-panel {
+  background: #0d0d0e; border-left: 1px solid #1e1e22;
+  display: flex; flex-direction: column;
+}
+.cart-header {
+  padding: 12px 14px; border-bottom: 1px solid #1e1e22;
+  font: 600 12px/1 var(--sans); color: var(--text2);
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.cart-items { flex: 1; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }
+.cart-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; background: #111113;
+  border: 1px solid #1e1e22; border-radius: 6px;
+}
+.cart-item-name { flex: 1; font: 500 11.5px/1.3 var(--sans); color: var(--text); }
+.cart-qty {
+  display: flex; align-items: center; gap: 4px;
+  font: 12px/1 var(--mono); color: var(--text2);
+}
+.qty-btn {
+  width: 18px; height: 18px; border-radius: 4px;
+  background: #1e1e22; font-size: 12px; color: var(--text3);
+  display: grid; place-items: center; cursor: default;
+}
+.cart-sub { font: 600 12px/1 var(--mono); color: var(--green); }
+.cart-footer { padding: 12px 14px; border-top: 1px solid #1e1e22; }
+.cart-total-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.cart-total-label { font: 11px/1 var(--mono); color: var(--text3); text-transform: uppercase; letter-spacing: .06em; }
+.cart-total-val { font: 700 20px/1 var(--mono); color: var(--text); }
+.pay-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.pay-btn {
+  padding: 6px; border-radius: 5px;
+  font: 600 10px/1 var(--sans); color: var(--text2);
+  background: #141416; border: 1px solid #252528;
+  text-align: center; cursor: default;
+}
+.pay-btn.sel { background: rgba(34,197,94,.1); border-color: rgba(34,197,94,.3); color: var(--green); }
+.btn-finalizar {
+  width: 100%; padding: 10px;
+  background: var(--green); color: #000;
+  border-radius: 6px; font: 700 13px/1 var(--sans);
+  text-align: center; cursor: default;
+}
+
+/* ── Features Section ─────────────────────────────────────────── */
+section.features {
+  max-width: 1100px; margin: 0 auto;
+  padding: 80px 24px;
+}
+.sec-label {
+  font: 400 11px/1 var(--mono); color: var(--green);
+  letter-spacing: .12em; text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.sec-title {
+  font: 700 clamp(30px,4vw,44px)/1.1 var(--head);
+  letter-spacing: -.02em; margin-bottom: 48px;
+}
+.sec-title span { color: var(--text3); }
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  overflow: hidden;
+}
+.feat {
+  background: var(--bg2);
+  padding: 32px 28px;
+  transition: background .2s;
+}
+.feat:hover { background: var(--bg3); }
+.feat-icon {
+  width: 40px; height: 40px; border-radius: 8px;
+  background: var(--green-bg); border: 1px solid rgba(34,197,94,.2);
+  display: grid; place-items: center; margin-bottom: 20px;
+  color: var(--green);
+}
+.feat-title { font: 600 16px/1 var(--head); margin-bottom: 10px; }
+.feat-desc { font-size: 14px; color: var(--text2); line-height: 1.65; }
+
+/* ── Stack Section ───────────────────────────────────────────── */
+section.stack {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 56px 24px;
+}
+.stack-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 48px;
+  flex-wrap: wrap;
+}
+.stack-left { flex: 1; min-width: 280px; }
+.stack-left p { color: var(--text2); max-width: 400px; line-height: 1.7; margin-top: 12px; }
+.stack-pills { display: flex; flex-wrap: wrap; gap: 10px; flex: 1; min-width: 280px; justify-content: flex-end; }
+.stack-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px; border-radius: 100px;
+  background: var(--surface); border: 1px solid var(--border2);
+  font: 500 13px/1 var(--sans); color: var(--text2);
+  transition: border-color .2s, color .2s;
+}
+.stack-pill:hover { border-color: var(--green); color: var(--text); }
+.pill-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ── Install Section ─────────────────────────────────────────── */
+section.install {
+  max-width: 1100px; margin: 0 auto;
+  padding: 80px 24px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;
+}
+.install-text .sec-title { margin-bottom: 16px; }
+.install-text p { color: var(--text2); line-height: 1.7; margin-bottom: 24px; }
+.install-steps { display: flex; flex-direction: column; gap: 0; }
+.step {
+  display: flex; gap: 16px; position: relative;
+  padding-bottom: 28px;
+}
+.step:last-child { padding-bottom: 0; }
+.step::before {
+  content: ''; position: absolute;
+  left: 15px; top: 32px; bottom: 0; width: 1px;
+  background: var(--border2);
+}
+.step:last-child::before { display: none; }
+.step-num {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  background: var(--surface); border: 1px solid var(--border2);
+  display: grid; place-items: center;
+  font: 600 12px/1 var(--mono); color: var(--green);
+  position: relative; z-index: 1;
+}
+.step-content { padding-top: 6px; }
+.step-title { font: 600 14px/1 var(--sans); color: var(--text); margin-bottom: 4px; }
+.step-desc { font: 13px/1.5 var(--sans); color: var(--text2); }
+
+.code-block {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: var(--r2);
+  overflow: hidden;
+}
+.code-header {
+  padding: 12px 16px; background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.code-filename { font: 12px/1 var(--mono); color: var(--text3); }
+.code-lang {
+  font: 11px/1 var(--mono); color: var(--green);
+  background: var(--green-bg); padding: 2px 8px; border-radius: 4px;
+}
+.code-body { padding: 20px; font: 13px/1.8 var(--mono); color: var(--text2); }
+.code-body .cmd { color: var(--accent); }
+.code-body .comment { color: var(--text3); }
+.code-body .str { color: var(--green); }
+.code-body .kw { color: var(--yellow); }
+
+/* ── Footer ──────────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 40px 48px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 24px; flex-wrap: wrap;
+}
+.footer-logo { display: flex; align-items: center; gap: 8px; font: 600 15px/1 var(--head); color: var(--text); }
+.footer-note { font: 13px/1 var(--mono); color: var(--text3); }
+.footer-links { display: flex; gap: 20px; }
+.footer-links a { font: 13px/1 var(--sans); color: var(--text3); text-decoration: none; transition: color .2s; }
+.footer-links a:hover { color: var(--text); }
+
+/* ── Responsivo ──────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  header { padding: 0 20px; }
+  header nav { display: none; }
+  .hero-stats { gap: 24px; }
+  .features-grid { grid-template-columns: 1fr 1fr; }
+  section.install { grid-template-columns: 1fr; }
+  .stack-inner { flex-direction: column; }
+  .stack-pills { justify-content: flex-start; }
+}
+@media (max-width: 600px) {
+  h1 { font-size: 40px; }
+  .features-grid { grid-template-columns: 1fr; }
+  .hero-stats { flex-direction: column; gap: 20px; }
+  .stat-div { display: none; }
+  footer { flex-direction: column; align-items: flex-start; }
+  .caixa-body { grid-template-columns: 1fr; }
+  .cart-panel { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────── -->
+<header>
+  <a class="logo-wrap" href="#">
+    <div class="logo-box">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+        <line x1="12" y1="22.08" x2="12" y2="12"/>
+      </svg>
+    </div>
+    <div>
+      <div>SiX PDV</div>
+      <div class="logo-sub">v1.2 · stable</div>
+    </div>
+  </a>
+  <nav>
+    <a href="#features">Recursos</a>
+    <a href="#stack">Stack</a>
+    <a href="#install">Instalar</a>
+  </nav>
+  <a class="btn-gh" href="https://github.com/CristophFranca/six-pdv" target="_blank">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+    GitHub
+  </a>
+</header>
+
+<!-- ── Hero ────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="grid-bg"></div>
+  <div class="hero-glow"></div>
+
+  <div class="badge">
+    <span class="badge-dot"></span>
+    Open source · 100% local · sem mensalidade
+  </div>
+
+  <h1>PDV que<br>simplesmente <em>funciona</em></h1>
+
+  <p class="hero-desc">
+    Sistema de ponto de venda e gestão de estoque para pequenos comércios.
+    Instala em 3 minutos, roda sem internet, custa zero.
+  </p>
+
+  <div class="hero-actions">
+    <a class="btn-primary" href="https://github.com/CristophFranca/six-pdv/archive/refs/heads/main.zip">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download
+    </a>
+    <a class="btn-secondary" href="https://github.com/CristophFranca/six-pdv" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+      Ver código
+    </a>
+  </div>
+
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-num">85<span>+</span></div>
+      <div class="stat-label">Produtos no catálogo</div>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat-item">
+      <div class="stat-num">0<span>ms</span></div>
+      <div class="stat-label">Latência (local)</div>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat-item">
+      <div class="stat-num">R$<span>0</span></div>
+      <div class="stat-label">Mensalidade</div>
+    </div>
+    <div class="stat-div"></div>
+    <div class="stat-item">
+      <div class="stat-num">3<span>min</span></div>
+      <div class="stat-label">Para instalar</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Preview ─────────────────────────────────────────────────── -->
+<div class="preview-wrap">
+  <div class="preview-tabs">
+    <button class="ptab active" onclick="showScreen('estoque',this)">Estoque</button>
+    <button class="ptab" onclick="showScreen('dashboard',this)">Dashboard</button>
+    <button class="ptab" onclick="showScreen('caixa',this)">Caixa / PDV</button>
+  </div>
+
+  <div class="window">
+    <div class="window-bar">
+      <div class="dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+      <div class="window-url">localhost:5000</div>
+    </div>
+
+    <!-- Topbar do sistema (compartilhada) -->
+    <div class="sys-topbar">
+      <div class="sys-logo">
+        <div class="sys-logo-box">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          </svg>
+        </div>
+        <div>
+          <div>SiX PDV</div>
+          <div class="sys-logo-sub">Sistema de PDV</div>
+        </div>
+      </div>
+      <div id="sys-nav-estoque" class="nav-pill active">Estoque</div>
+      <div id="sys-nav-dash" class="nav-pill">Dashboard</div>
+      <div class="spacer"></div>
+      <div id="sys-btn-caixa" class="btn-green-sm">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Ir para o Caixa
+      </div>
+    </div>
+
+    <!-- ESTOQUE -->
+    <div class="screen active" id="screen-estoque">
+      <div class="estoque-body">
+        <div class="est-toolbar">
+          <div class="search-box">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Buscar produto, código, EAN…
+          </div>
+          <div class="filter-pill">Todas categorias</div>
+          <div class="filter-pill">Todos status</div>
+          <div style="margin-left:auto;display:flex;gap:6px">
+            <div style="padding:4px 10px;border-radius:5px;background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);font:600 11px/1 var(--mono);color:var(--accent)">+ Novo Produto</div>
+          </div>
+        </div>
+        <div class="result-row">
+          <span><strong>85</strong> produtos &nbsp;·&nbsp; Qtd. total: <strong>5.304</strong></span>
+          <span>Atualizado às 14:32:07</span>
+        </div>
+        <table class="est-table">
+          <thead>
+            <tr>
+              <th>Código</th><th>EAN</th><th>Descrição ↑</th><th>Categoria</th><th>Status</th>
+              <th style="text-align:right">Quantidade</th><th style="text-align:right">Mín/Máx</th>
+              <th style="text-align:right">Preço Venda</th><th>Nível</th><th style="text-align:right">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="cod">BEB035</td>
+              <td class="ean">7891991010019</td>
+              <td style="font-weight:600">Skol Lata 350ml</td>
+              <td><span style="font:11px/1 var(--mono);color:var(--text3)">Bebidas</span></td>
+              <td><span class="pill normal">● Normal</span></td>
+              <td style="text-align:right;font-family:var(--mono);font-size:12px">144 <span style="color:var(--text3);font-size:10px">UN</span></td>
+              <td style="text-align:right;font:11px/1 var(--mono);color:var(--text3)">48 / 288</td>
+              <td class="price-col" style="text-align:right">R$ 5,00</td>
+              <td><div class="level-bar"><div class="bar-track"><div class="bar-fill" style="width:50%"></div></div><span class="bar-pct">50%</span></div></td>
+              <td><div class="actions-col">
+                <div class="ic-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                <div class="ic-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                <div class="ic-btn" style="border-color:rgba(96,165,250,.25)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              </div></td>
+            </tr>
+            <tr>
+              <td class="cod">BEB037</td>
+              <td class="ean">7891991010033</td>
+              <td style="font-weight:600">Heineken Lata 350ml</td>
+              <td><span style="font:11px/1 var(--mono);color:var(--text3)">Bebidas</span></td>
+              <td><span class="pill normal">● Normal</span></td>
+              <td style="text-align:right;font-family:var(--mono);font-size:12px">96 <span style="color:var(--text3);font-size:10px">UN</span></td>
+              <td style="text-align:right;font:11px/1 var(--mono);color:var(--text3)">24 / 192</td>
+              <td class="price-col" style="text-align:right">R$ 8,00</td>
+              <td><div class="level-bar"><div class="bar-track"><div class="bar-fill" style="width:50%"></div></div><span class="bar-pct">50%</span></div></td>
+              <td><div class="actions-col">
+                <div class="ic-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                <div class="ic-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                <div class="ic-btn" style="border-color:rgba(96,165,250,.25)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              </div></td>
+            </tr>
+            <tr>
+              <td class="cod">CIG001</td>
+              <td class="ean">7896102001016</td>
+              <td style="font-weight:600">Marlboro Red Maço c/20</td>
+              <td><span style="font:11px/1 var(--mono);color:var(--text3)">Cigarros</span></td>
+              <td><span class="pill baixo">● Baixo</span></td>
+              <td style="text-align:right;font-family:var(--mono);font-size:12px">22 <span style="color:var(--text3);font-size:10px">UN</span></td>
+              <td style="text-align:right;font:11px/1 var(--mono);color:var(--text3)">20 / 120</td>
+              <td class="price-col" style="text-align:right">R$ 16,00</td>
+              <td><div class="level-bar"><div class="bar-track"><div class="bar-fill y" style="width:18%"></div></div><span class="bar-pct">18%</span></div></td>
+              <td><div class="actions-col">
+                <div class="ic-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                <div class="ic-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                <div class="ic-btn" style="border-color:rgba(96,165,250,.25)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              </div></td>
+            </tr>
+            <tr>
+              <td class="cod">ALI005</td>
+              <td class="ean">7892840111054</td>
+              <td style="font-weight:600">Pringles Original 114g</td>
+              <td><span style="font:11px/1 var(--mono);color:var(--text3)">Alimentos</span></td>
+              <td><span class="pill critico">● Crítico</span></td>
+              <td style="text-align:right;font-family:var(--mono);font-size:12px">4 <span style="color:var(--text3);font-size:10px">UN</span></td>
+              <td style="text-align:right;font:11px/1 var(--mono);color:var(--text3)">12 / 72</td>
+              <td class="price-col" style="text-align:right">R$ 14,00</td>
+              <td><div class="level-bar"><div class="bar-track"><div class="bar-fill r" style="width:6%"></div></div><span class="bar-pct">6%</span></div></td>
+              <td><div class="actions-col">
+                <div class="ic-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></div>
+                <div class="ic-btn"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></div>
+                <div class="ic-btn" style="border-color:rgba(96,165,250,.25)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+              </div></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="screen" id="screen-dashboard">
+      <div class="dash-body">
+        <div class="kpi">
+          <div class="kpi-label">Vendas hoje</div>
+          <div class="kpi-val green">R$ 847,50</div>
+          <div class="kpi-sub">↑ 12% vs ontem</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Transações</div>
+          <div class="kpi-val">34</div>
+          <div class="kpi-sub">ticket médio R$ 24,90</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">SKUs ativos</div>
+          <div class="kpi-val">85</div>
+          <div class="kpi-sub">3 categorias</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Itens críticos</div>
+          <div class="kpi-val" style="color:var(--red)">4</div>
+          <div class="kpi-sub">reposição urgente</div>
+        </div>
+
+        <div class="dash-chart">
+          <div class="chart-title">Movimentações — 14 dias</div>
+          <div class="mini-bars" id="miniBars"></div>
+        </div>
+
+        <div class="dash-list">
+          <div class="chart-title">Críticos — reposição</div>
+          <div class="list-row">
+            <div style="display:flex;align-items:center"><div class="list-dot" style="background:var(--red)"></div><span style="font-size:12px">Pringles Original 114g</span></div>
+            <span class="pill critico">4 UN</span>
+          </div>
+          <div class="list-row">
+            <div style="display:flex;align-items:center"><div class="list-dot" style="background:var(--yellow)"></div><span style="font-size:12px">Marlboro Red Maço</span></div>
+            <span class="pill baixo">22 UN</span>
+          </div>
+          <div class="list-row">
+            <div style="display:flex;align-items:center"><div class="list-dot" style="background:var(--red)"></div><span style="font-size:12px">Red Bull 355ml</span></div>
+            <span class="pill critico">3 UN</span>
+          </div>
+          <div class="list-row">
+            <div style="display:flex;align-items:center"><div class="list-dot" style="background:var(--yellow)"></div><span style="font-size:12px">Toblerone Leite 50g</span></div>
+            <span class="pill baixo">9 UN</span>
+          </div>
+        </div>
+
+        <div class="dash-chart" style="grid-column:span 4">
+          <div class="chart-title">Formas de pagamento — hoje</div>
+          <div style="display:flex;gap:24px;align-items:center;margin-top:8px">
+            <div style="display:flex;flex-direction:column;gap:8px;flex:1">
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;font:11px/1 var(--mono);color:var(--text3)"><span>Dinheiro</span><span style="color:var(--text)">R$ 312,00</span></div>
+                <div style="height:6px;background:#1e1e22;border-radius:3px"><div style="width:37%;height:100%;background:var(--green);border-radius:3px"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;font:11px/1 var(--mono);color:var(--text3)"><span>PIX</span><span style="color:var(--text)">R$ 280,50</span></div>
+                <div style="height:6px;background:#1e1e22;border-radius:3px"><div style="width:33%;height:100%;background:var(--accent);border-radius:3px"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;font:11px/1 var(--mono);color:var(--text3)"><span>Débito</span><span style="color:var(--text)">R$ 155,00</span></div>
+                <div style="height:6px;background:#1e1e22;border-radius:3px"><div style="width:18%;height:100%;background:var(--yellow);border-radius:3px"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;font:11px/1 var(--mono);color:var(--text3)"><span>Crédito</span><span style="color:var(--text)">R$ 100,00</span></div>
+                <div style="height:6px;background:#1e1e22;border-radius:3px"><div style="width:12%;height:100%;background:var(--red);border-radius:3px"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CAIXA PDV -->
+    <div class="screen" id="screen-caixa">
+      <div class="caixa-body">
+        <div class="prod-grid">
+          <div class="prod-card">
+            <div class="prod-nome">Skol Lata 350ml</div>
+            <div class="prod-cat">Bebidas</div>
+            <div class="prod-preco-card">R$ 5,00</div>
+            <div class="prod-stock">144 UN em estoque</div>
+          </div>
+          <div class="prod-card">
+            <div class="prod-nome">Heineken Lata 350ml</div>
+            <div class="prod-cat">Bebidas</div>
+            <div class="prod-preco-card">R$ 8,00</div>
+            <div class="prod-stock">96 UN em estoque</div>
+          </div>
+          <div class="prod-card">
+            <div class="prod-nome">Red Bull 250ml</div>
+            <div class="prod-cat">Bebidas</div>
+            <div class="prod-preco-card">R$ 12,00</div>
+            <div class="prod-stock">48 UN em estoque</div>
+          </div>
+          <div class="prod-card">
+            <div class="prod-nome">Coca-Cola Lata 350ml</div>
+            <div class="prod-cat">Bebidas</div>
+            <div class="prod-preco-card">R$ 4,50</div>
+            <div class="prod-stock">120 UN em estoque</div>
+          </div>
+          <div class="prod-card">
+            <div class="prod-nome">Marlboro Red</div>
+            <div class="prod-cat">Cigarros</div>
+            <div class="prod-preco-card">R$ 16,00</div>
+            <div class="prod-stock">22 UN em estoque</div>
+          </div>
+          <div class="prod-card">
+            <div class="prod-nome">Doritos Nacho 54g</div>
+            <div class="prod-cat">Alimentos</div>
+            <div class="prod-preco-card">R$ 4,50</div>
+            <div class="prod-stock">60 UN em estoque</div>
+          </div>
+          <div class="prod-card">
+            <div class="prod-nome">Pringles 114g</div>
+            <div class="prod-cat">Alimentos</div>
+            <div class="prod-preco-card">R$ 14,00</div>
+            <div class="prod-stock">4 UN em estoque</div>
+          </div>
+          <div class="prod-card esg">
+            <div class="prod-nome">Monster Energy 473ml</div>
+            <div class="prod-cat">Bebidas</div>
+            <div class="prod-preco-card" style="color:var(--text3)">R$ 13,00</div>
+            <div class="prod-stock">Esgotado</div>
+          </div>
+        </div>
+
+        <div class="cart-panel">
+          <div class="cart-header">Carrinho · 3 itens</div>
+          <div class="cart-items">
+            <div class="cart-item">
+              <div class="cart-item-name">Skol Lata 350ml</div>
+              <div class="cart-qty">
+                <div class="qty-btn">−</div>
+                <span>2</span>
+                <div class="qty-btn">+</div>
+              </div>
+              <div class="cart-sub">R$ 10,00</div>
+            </div>
+            <div class="cart-item">
+              <div class="cart-item-name">Marlboro Red Maço</div>
+              <div class="cart-qty">
+                <div class="qty-btn">−</div>
+                <span>1</span>
+                <div class="qty-btn">+</div>
+              </div>
+              <div class="cart-sub">R$ 16,00</div>
+            </div>
+            <div class="cart-item">
+              <div class="cart-item-name">Pringles Original</div>
+              <div class="cart-qty">
+                <div class="qty-btn">−</div>
+                <span>1</span>
+                <div class="qty-btn">+</div>
+              </div>
+              <div class="cart-sub">R$ 14,00</div>
+            </div>
+          </div>
+          <div class="cart-footer">
+            <div class="cart-total-row">
+              <span class="cart-total-label">Total</span>
+              <span class="cart-total-val">R$ 40,00</span>
+            </div>
+            <div class="pay-btns">
+              <div class="pay-btn sel">💵 Dinheiro</div>
+              <div class="pay-btn">PIX</div>
+              <div class="pay-btn">Débito</div>
+              <div class="pay-btn">Crédito</div>
+            </div>
+            <div class="btn-finalizar">Finalizar Venda</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Features ─────────────────────────────────────────────────── -->
+<section class="features" id="features">
+  <div class="sec-label">O que tem dentro</div>
+  <h1 class="sec-title" style="font-size:clamp(28px,3.5vw,40px)">Tudo que uma loja precisa,<br><span>nada que ela não precisa.</span></h1>
+
+  <div class="features-grid">
+    <div class="feat">
+      <div class="feat-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      </div>
+      <div class="feat-title">Gestão de Estoque</div>
+      <div class="feat-desc">Cadastro completo com EAN, alertas automáticos por nível (normal, baixo, crítico, zerado), histórico de movimentações e exportação CSV.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      </div>
+      <div class="feat-title">PDV Completo</div>
+      <div class="feat-desc">Carrinho, 4 formas de pagamento, cálculo de troco, desconto por venda, abertura e fechamento de caixa com relatório impresso.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      </div>
+      <div class="feat-title">Dashboard em Tempo Real</div>
+      <div class="feat-desc">KPIs do dia, gráficos de movimentação dos últimos 14 dias, distribuição por forma de pagamento e lista de produtos para reposição.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="4" height="4"/><rect x="17" y="3" width="4" height="4"/><rect x="3" y="17" width="4" height="4"/><path d="M21 17h-4v4m4-4v4m-4-4h4M7 3v4H3M3 7h4M7 21v-4H3"/></svg>
+      </div>
+      <div class="feat-title">Scanner de Código de Barras</div>
+      <div class="feat-desc">Leitura via câmera com BarcodeDetector API. Busca automática por EAN no estoque e adição ao carrinho com um clique ou scan.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <div class="feat-title">Requisições com Impressão</div>
+      <div class="feat-desc">Gere pedidos de reposição formatados para impressão. O débito no estoque é automático ao confirmar a requisição.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div class="feat-title">Multi-usuário</div>
+      <div class="feat-desc">Perfis Admin e Operador. Admin controla usuários, vê todas as telas e exporta dados. Operador acessa estoque e caixa.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Stack ─────────────────────────────────────────────────────── -->
+<section class="stack" id="stack">
+  <div class="stack-inner">
+    <div class="stack-left">
+      <div class="sec-label">Tecnologia</div>
+      <div class="sec-title" style="font-size:clamp(24px,2.5vw,32px);margin-bottom:0">Stack deliberadamente<br>simples.</div>
+      <p>Sem Docker, sem Redis, sem PostgreSQL, sem Node. Python + SQLite + um browser. Se o PC liga, o sistema roda.</p>
+    </div>
+    <div class="stack-pills">
+      <div class="stack-pill"><div class="pill-dot" style="background:#3776ab"></div>Python 3.10+</div>
+      <div class="stack-pill"><div class="pill-dot" style="background:#000"></div>Flask 3.x</div>
+      <div class="stack-pill"><div class="pill-dot" style="background:#003b57"></div>SQLite 3</div>
+      <div class="stack-pill"><div class="pill-dot" style="background:#f7df1e"></div>JavaScript vanilla</div>
+      <div class="stack-pill"><div class="pill-dot" style="background:var(--green)"></div>Chart.js 4</div>
+      <div class="stack-pill"><div class="pill-dot" style="background:#ea4c89"></div>DM Sans / JetBrains Mono</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Install ───────────────────────────────────────────────────── -->
+<section class="install" id="install">
+  <div class="install-text">
+    <div class="sec-label">Instalação</div>
+    <div class="sec-title" style="font-size:clamp(24px,2.5vw,32px)">3 minutos do zero<br>ao primeiro caixa aberto.</div>
+    <p>Não precisa de servidor, não precisa de técnico. Qualquer pessoa que consiga instalar um programa no Windows consegue instalar o SiX PDV.</p>
+    <div class="install-steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Instale o Python</div>
+          <div class="step-desc">Baixe em python.org e marque "Add Python to PATH" durante a instalação.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Baixe o SiX PDV</div>
+          <div class="step-desc">Faça download e extraia para <code style="font-family:var(--mono);font-size:12px;color:var(--green)">C:\SiXPDV\</code></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Clique em iniciar.bat</div>
+          <div class="step-desc">Instala dependências automaticamente e abre o sistema no navegador.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="code-block">
+    <div class="code-header">
+      <span class="code-filename">terminal</span>
+      <span class="code-lang">bash</span>
+    </div>
+    <div class="code-body">
+<span class="comment"># Clonar o repositório</span>
+<span class="cmd">git clone</span> https://github.com/CristophFranca/six-pdv
+<span class="cmd">cd</span> six-pdv
+
+<span class="comment"># Instalar dependências</span>
+<span class="cmd">pip install</span> -r requirements.txt
+
+<span class="comment"># Iniciar</span>
+<span class="cmd">python</span> run.py
+
+<span class="comment">
+# Acesse http://localhost:5000
+# Login: admin@six.local
+# Senha: admin123</span>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ───────────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-logo">
+    <div class="logo-box" style="width:24px;height:24px;border-radius:6px">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      </svg>
+    </div>
+    SiX PDV
+  </div>
+  <span class="footer-note">MIT License · Python + Flask + SQLite</span>
+  <div class="footer-links">
+    <a href="https://github.com/CristophFranca/six-pdv">GitHub</a>
+    <a href="https://github.com/CristophFranca/six-pdv/blob/main/README.md">Docs</a>
+    <a href="https://github.com/CristophFranca/six-pdv/archive/refs/heads/main.zip">Download</a>
+  </div>
+</footer>
+
+<script>
+// ── Preview tabs ───────────────────────────────────────────────
+function showScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.ptab').forEach(t => t.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  btn.classList.add('active');
+
+  // atualizar topbar do sistema
+  const navEstoque = document.getElementById('sys-nav-estoque');
+  const navDash    = document.getElementById('sys-nav-dash');
+  const btnCaixa   = document.getElementById('sys-btn-caixa');
+
+  navEstoque.classList.toggle('active', name === 'estoque');
+  navDash.classList.toggle('active',    name === 'dashboard');
+  btnCaixa.style.display = name === 'caixa' ? 'none' : 'flex';
+}
+
+// ── Mini bars dashboard ───────────────────────────────────────
+const vals = [42,65,38,71,55,83,47,90,62,78,45,88,73,95];
+const bars = document.getElementById('miniBars');
+const max  = Math.max(...vals);
+vals.forEach(v => {
+  const b = document.createElement('div');
+  b.className = 'mini-bar';
+  b.style.height = (v / max * 100) + '%';
+  b.style.opacity = .4 + (v / max) * .6;
+  bars.appendChild(b);
+});
+
+// ── Scroll reveal suave ───────────────────────────────────────
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.feat, .step, .stack-pill').forEach(el => {
+  el.style.opacity = '0';
+  el.style.transform = 'translateY(16px)';
+  el.style.transition = 'opacity .5s ease, transform .5s ease';
+  obs.observe(el);
+});
+
+// stagger nos cards de features
+document.querySelectorAll('.feat').forEach((el, i) => {
+  el.style.transitionDelay = (i * 60) + 'ms';
+});
+document.querySelectorAll('.stack-pill').forEach((el, i) => {
+  el.style.transitionDelay = (i * 40) + 'ms';
+});
+</script>
+</body>
+</html>

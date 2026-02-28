@@ -139,7 +139,7 @@ six/
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/CristophFranca/SiX_PDV.git
+git clone https://github.com/seu-usuario/six-pdv.git
 cd six-pdv
 
 # 2. Instale as dependências

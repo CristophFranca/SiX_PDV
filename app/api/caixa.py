@@ -145,7 +145,7 @@ def caixa_registrar_venda():
     if pagamento not in ("dinheiro", "pix", "cartao_debito", "cartao_credito"):
         return jsonify({"erro": "Forma de pagamento inválida"}), 400
 
-    # Calcula total
+    # Valida estoque e calcula total
     subtotal = 0.0
     itens_validados = []
     for item in itens:
@@ -153,7 +153,22 @@ def caixa_registrar_venda():
         qty = int(item.get("quantidade", 1))
         row = db.execute("SELECT * FROM produtos WHERE id=?", (pid,)).fetchone()
         if not row:
-            return jsonify({"erro": f"Produto {pid} não encontrado"}), 404
+            return jsonify({"erro": f"Produto '{pid}' não encontrado"}), 404
+
+        # Validação de estoque suficiente
+        if row["quantidade"] <= 0:
+            return jsonify({
+                "erro": f"Produto '{row['descricao']}' está sem estoque."
+            }), 400
+        if qty > row["quantidade"]:
+            return jsonify({
+                "erro": (
+                    f"Estoque insuficiente para '{row['descricao']}'. "
+                    f"Disponível: {int(row['quantidade'])} {row['unidade']} — "
+                    f"Solicitado: {qty} {row['unidade']}."
+                )
+            }), 400
+
         preco = float(item.get("preco_unit", row["preco_venda"]))
         sub   = round(preco * qty, 2)
         subtotal += sub

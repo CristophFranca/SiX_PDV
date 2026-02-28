@@ -114,7 +114,7 @@ function renderProdutos() {
   }
 
   grid.innerHTML = lista.map(p => `
-    <div class="prod-card${p.quantidade === 0 ? " esgotado" : ""}" onclick="addToCart(${p.id})">
+    <div class="prod-card${p.quantidade === 0 ? " esgotado" : ""}" onclick="addToCart(${p.id})" title="${p.quantidade === 0 ? 'Sem estoque' : ''}">
       <div class="prod-cat">${p.categoria}</div>
       <div class="prod-nome">${p.descricao}</div>
       <div class="prod-preco">${fmtBRL(p.preco_venda)}</div>
@@ -138,7 +138,15 @@ function addToCart(pid) {
 }
 
 function changeQty(idx, delta) {
-  pdv.cart[idx].qty = Math.max(1, pdv.cart[idx].qty + delta);
+  const item = pdv.cart[idx];
+  const prod = pdv.produtos.find(x => x.id === item.id);
+  const max  = prod ? prod.quantidade : Infinity;
+  const nova = Math.max(1, item.qty + delta);
+  if (nova > max) {
+    toast(`Máximo disponível: ${max} ${item.unidade}.`, "error");
+    return;
+  }
+  item.qty = nova;
   renderCart();
 }
 
@@ -220,6 +228,17 @@ async function finalizarVenda() {
   const valor_pago = parseFloat(document.getElementById("trocoInput")?.value) || 0;
   const subtotal  = pdv.cart.reduce((a, x) => a + x.preco * x.qty, 0);
   const total     = Math.max(0, subtotal - desconto);
+
+  // Checar estoque atualizado antes de enviar
+  for (const item of pdv.cart) {
+    const prod = pdv.produtos.find(x => x.id === item.id);
+    if (!prod || prod.quantidade <= 0) {
+      toast(`"${item.nome}" está sem estoque. Remova do carrinho.`, "error"); return;
+    }
+    if (item.qty > prod.quantidade) {
+      toast(`Estoque insuficiente para "${item.nome}". Disponível: ${prod.quantidade} ${item.unidade}.`, "error"); return;
+    }
+  }
 
   if (pdv.pagamento === "dinheiro" && valor_pago < total) {
     toast("Valor pago insuficiente.", "error"); return;
